@@ -3,6 +3,9 @@ A level viewer for UDK/UE3 based games
 
 This editor was build using code from [Legendary Explorer](https://github.com/ME3Tweaks/LegendaryExplorer/).
 
+### Features
+* T3D Exporter (Exports mesh positions, lighting positions, custom actors, etc)
+
 ### Games List
 These are the games I've currently tested with this level viewer, there may be more that work!
 | Name                          | Viewer | T3D Export         | Kismet | Matinee | Materials |

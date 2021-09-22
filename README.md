@@ -20,4 +20,6 @@ These are the games I've currently tested with this level viewer, there may be m
 ### How To Build
 
 ### License
-As Lengendary Explorer was licensed under GPL-3.0 so is this level viewer.
+The code from Legendary Explorer inside `LegendaryExplorerCore` is licensed under GPL-3.0, [you can view it here.](LegendaryExplorerCore/LICENSE)
+
+UDKLevelViewer is licensed under MIT, [you can view that here](LICENSE)

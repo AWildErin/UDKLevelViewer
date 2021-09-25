@@ -7,6 +7,11 @@
 
   <ItemGroup>
     <PackageReference Include="OpenTK" Version="4.6.7" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\LegendaryExplorer\LegendaryExplorer\LegendaryExplorerCore\LegendaryExplorerCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>

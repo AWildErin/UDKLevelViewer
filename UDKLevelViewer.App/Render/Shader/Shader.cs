@@ -185,5 +185,16 @@ namespace UDKLevelViewer.App.Render
             GL.UseProgram(Handle);
             GL.Uniform3(_uniformLocations[name], data);
         }
+
+        /// <summary>
+        /// Set a uniform Vector4 on this shader.
+        /// </summary>
+        /// <param name="name">The name of the uniform</param>
+        /// <param name="data">The data to set</param>
+        public void SetVector4(string name, Vector4 data)
+		{
+            GL.UseProgram(Handle);
+            GL.Uniform4(_uniformLocations[name], data);
+		}
     }
 }

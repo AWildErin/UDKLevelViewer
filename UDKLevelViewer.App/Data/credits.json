@@ -1,0 +1,18 @@
+{
+  "MainContributors": [
+    {
+      "Name": "Erin",
+      "Reason": "Main programming"
+    },
+    {
+      "Name": "Elan",
+      "Reason": "Gave the initial idea and support with UE3-related questions"
+    }
+  ],
+  "SpecialThanks": [
+    {
+      "Name": "CraftableScience",
+      "Reason": "For letting me use some of his code for this project."
+    }
+  ]
+}

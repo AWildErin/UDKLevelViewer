@@ -7,25 +7,17 @@ using OpenTK.Mathematics;
 
 namespace UDKLevelViewer.App.Render
 {
-    // A simple class meant to help create shaders.
+    // @todo: Refactor class and clear it all up
     public class Shader
     {
+        private static readonly List<Shader> Shaders = new List<Shader>();
+
         public readonly int Handle;
 
         private readonly Dictionary<string, int> _uniformLocations;
 
-        // This is how you create a simple shader.
-        // Shaders are written in GLSL, which is a language very similar to C in its semantics.
-        // The GLSL source is compiled *at runtime*, so it can optimize itself for the graphics card it's currently being used on.
-        // A commented example of GLSL can be found in shader.vert.
         public Shader(string vertPath, string fragPath)
         {
-            // There are several different types of shaders, but the only two you need for basic rendering are the vertex and fragment shaders.
-            // The vertex shader is responsible for moving around vertices, and uploading that data to the fragment shader.
-            //   The vertex shader won't be too important here, but they'll be more important later.
-            // The fragment shader is responsible for then converting the vertices to "fragments", which represent all the data OpenGL needs to draw a pixel.
-            //   The fragment shader is what we'll be using the most here.
-
             // Load vertex shader and compile
             var shaderSource = File.ReadAllText(vertPath);
 
@@ -84,6 +76,8 @@ namespace UDKLevelViewer.App.Render
                 // and then add it to the dictionary.
                 _uniformLocations.Add(key, location);
             }
+
+            //Shaders.Add(this);
         }
 
         private static void CompileShader(int shader)
@@ -116,10 +110,15 @@ namespace UDKLevelViewer.App.Render
         }
 
         // A wrapper function that enables the shader program.
-        public void Use()
+        public void Bind()
         {
             GL.UseProgram(Handle);
         }
+
+        public void Unbind()
+		{
+            GL.UseProgram(0);
+		}
 
         // The shader sources provided with this project use hardcoded layout(location)-s. If you want to do it dynamically,
         // you can omit the layout(location=X) lines in the vertex shader, and use this in VertexAttribPointer instead of the hardcoded values.
@@ -131,11 +130,6 @@ namespace UDKLevelViewer.App.Render
         // Uniform setters
         // Uniforms are variables that can be set by user code, instead of reading them from the VBO.
         // You use VBOs for vertex-related data, and uniforms for almost everything else.
-
-        // Setting a uniform is almost always the exact same, so I'll explain it here once, instead of in every method:
-        //     1. Bind the program you want to set the uniform on
-        //     2. Get a handle to the location of the uniform with GL.GetUniformLocation.
-        //     3. Use the appropriate GL.Uniform* function to set the uniform.
 
         /// <summary>
         /// Set a uniform int on this shader.
@@ -195,6 +189,26 @@ namespace UDKLevelViewer.App.Render
 		{
             GL.UseProgram(Handle);
             GL.Uniform4(_uniformLocations[name], data);
+		}
+
+        public static void SetProjectionMatrix(Matrix4 m)
+		{
+            foreach (var shader in Shaders)
+			{
+                shader.Bind();
+                shader.SetMatrix4("projMatrix", m);
+                shader.Unbind();
+            }
+		}
+
+        public static void SetViewMatrix(Matrix4 m)
+		{
+            foreach (var shader in Shaders)
+			{
+                shader.Bind();
+                shader.SetMatrix4("viewMatrix", m);
+                shader.Unbind();
+            }
 		}
     }
 }

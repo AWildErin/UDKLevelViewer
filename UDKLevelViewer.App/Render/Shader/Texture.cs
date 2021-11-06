@@ -1,8 +1,16 @@
 using System.Collections.Generic;
+using System.Drawing.Imaging;
+using System.IO;
+using LegendaryExplorerCore.Gammtek.Extensions;
+using LegendaryExplorerCore.Textures;
+using LegendaryExplorerCore.Unreal.Classes;
 using OpenTK.Graphics.OpenGL;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+
+using Image = SixLabors.ImageSharp.Image;
+using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 
 namespace UDKLevelViewer.App.Render
 {
@@ -18,6 +26,28 @@ namespace UDKLevelViewer.App.Render
         public static Texture LoadFromFile(string path, bool generateMipmaps = true) => new(CreateTexture(Image.Load<Rgba32>(path), generateMipmaps));
 
         public static Texture LoadFromImage(Image<Rgba32> image, bool generateMipmaps = true) => new(CreateTexture(image, generateMipmaps));
+
+        // TODO: Errors when tfc can't be found or is malformed.
+        public static Texture LoadFromTexture2D(Texture2D texture)
+		{
+            var format = texture.TextureFormat;
+            var topMip = texture.GetTopMip();
+
+            Image<Rgba32> image;
+            if (topMip == null)
+                image = Image.Load<Rgba32>("Data/textures/Unreal/defaultdiffuse.png");
+            else
+			{
+                var imageBytes = Texture2D.GetTextureData(topMip, topMip.Export.Game);
+                var test = LegendaryExplorerCore.Textures.Image.convertRawToBitmapARGB(imageBytes, topMip.width, topMip.height, LegendaryExplorerCore.Textures.Image.getPixelFormatType(format));
+                var memory = new MemoryStream(test.Height * test.Width * 4 + 54);
+                test.Save(memory, ImageFormat.Bmp);
+
+                image = Image.Load<Rgba32>(memory.ToArray());
+            }
+
+            return new Texture(CreateTexture(image, true));
+		}
 
         private static int CreateTexture(Image<Rgba32> image, bool generateMipmaps)
         {

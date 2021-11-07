@@ -35,29 +35,21 @@ namespace UDKLevelViewer.App.Entity
 
 		public void BakeMesh()
 		{
+			// @todo: probably doing this is bad, but for now it'll pass
 			// We mutliply by 5 as that is how much data we will pass through
-			//VertexArrayCache = new float[_vertices.Count * 5];
-
-			var test = new List<float>();
+			VertexArrayCache = new float[_vertices.Count * 5];
 			for (int i = 0; i < _vertices.Count; i++)
 			{
 				var vertex = _vertices[i];
-				//VertexArrayCache[i * 5] = vertex.Position.X;
-				//VertexArrayCache[i * 5 + 1] = vertex.Position.Y;
-				//VertexArrayCache[i * 5 + 2] = vertex.Position.Z;
-				//VertexArrayCache[i * 5 + 3] = vertex.Uv.X;
-				//VertexArrayCache[i * 5 + 4] = vertex.Uv.Y;
-
-				test.Add(vertex.Position.X);
-				test.Add(vertex.Position.Y);
-				test.Add(vertex.Position.Z);
-				test.Add(vertex.Uv.X);
-				test.Add(vertex.Uv.Y);
+				VertexArrayCache[i * 5] = vertex.Position.X;
+				VertexArrayCache[i * 5 + 1] = vertex.Position.Y;
+				VertexArrayCache[i * 5 + 2] = vertex.Position.Z;
+				VertexArrayCache[i * 5 + 3] = vertex.Uv.X;
+				VertexArrayCache[i * 5 + 4] = vertex.Uv.Y;
 			}
-			VertexArrayCache = test.ToArray();
 
 			// Check if the model already supplied it's own indices
-			if (IndexArrayCache.Length < 0)
+			if (IndexArrayCache.Length < 1)
 			{
 				IndexArrayCache = new uint[_indices.Count];
 				for (var i = 0; i < _indices.Count; i++)
@@ -67,12 +59,11 @@ namespace UDKLevelViewer.App.Entity
 			}
 
 			// Create the vertex buffer
-			VertexArrayId = GL.GenVertexArray();
-			GL.BindVertexArray(VertexArrayId);
-
 			VertexBufferId = GL.GenBuffer();
 			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferId);
 			GL.BufferData(BufferTarget.ArrayBuffer, VertexArrayCache.Length * sizeof(float), VertexArrayCache, BufferUsageHint.StaticDraw);
+			VertexArrayId = GL.GenVertexArray();
+			GL.BindVertexArray(VertexArrayId);
 
 			// Create the element buffer
 			ElementBufferId = GL.GenBuffer();
@@ -111,8 +102,14 @@ namespace UDKLevelViewer.App.Entity
 			GL.DrawElements(PrimitiveType.Triangles, IndexArrayCache.Length, DrawElementsType.UnsignedInt, 0);
 		}
 
+		// @todo: look at readding back this if statement, current breaks the rendering.
 		public void AddVertex(Vertex vert)
 		{
+			_vertices.Add(vert);
+			_indices.Add(CurrentIndex);
+			CurrentIndex++;
+
+			/*
 			if (_vertices.Contains(vert))
 			{
 				_indices.Add((uint)_vertices.IndexOf(vert));
@@ -123,6 +120,7 @@ namespace UDKLevelViewer.App.Entity
 				_indices.Add(CurrentIndex);
 				CurrentIndex++;
 			}
+			*/
 		}
 
 		public static StaticMeshActor CreateFromStaticMesh(StaticMesh mesh, Vector3 Position, Vector3 Rotation)
@@ -148,28 +146,17 @@ namespace UDKLevelViewer.App.Entity
 				}
 			}
 
-			/*
 			actor.IndexArrayCache = new uint[lod.IndexBuffer.Length];
 			// Todo: check if index buffer exists, some meshes don't have it.
-			for (int i = 0; i < lod.IndexBuffer.Length; i += 3)
-			{
-				actor.IndexArrayCache[i] = lod.IndexBuffer[i];
-				actor.IndexArrayCache[i + 1] = lod.IndexBuffer[i + 1];
-				actor.IndexArrayCache[i + 2] = lod.IndexBuffer[i + 2];
-			}
-			*/
-
-			var test2 = new List<uint>();
 			if (lod.IndexBuffer.Length > 0)
 			{
 				for (int i = 0; i < lod.IndexBuffer.Length; i += 3)
 				{
-					test2.Add(lod.IndexBuffer[i]);
-					test2.Add(lod.IndexBuffer[i + 1]);
-					test2.Add(lod.IndexBuffer[i + 2]);
+					actor.IndexArrayCache[i] = lod.IndexBuffer[i];
+					actor.IndexArrayCache[i + 1] = lod.IndexBuffer[i + 1];
+					actor.IndexArrayCache[i + 2] = lod.IndexBuffer[i + 2];
 				}
 			}
-			actor.IndexArrayCache = test2.ToArray();
 
 			actor.BakeMesh();
 

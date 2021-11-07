@@ -1,4 +1,5 @@
 using LegendaryExplorerCore.Unreal.BinaryConverters;
+using LegendaryExplorerCore.Unreal.Classes;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using System;
@@ -10,6 +11,7 @@ namespace UDKLevelViewer.App.Entity
 {
 	// @todo: probably move mesh related stuff to their own class so we can easily move this to other types of mesh actors
 	// @todo: possibly look into adding LODs
+	// @todo: allow meshes to have multiple materials
 	public class StaticMeshActor : Actor
 	{
 		private readonly List<uint> _indices = new List<uint>();
@@ -27,6 +29,7 @@ namespace UDKLevelViewer.App.Entity
 		public bool Finalized;
 
 		public Shader shader;
+		public Texture texture;
 
 		public StaticMeshActor()
 		{
@@ -82,10 +85,11 @@ namespace UDKLevelViewer.App.Entity
 			GL.EnableVertexAttribArray(shader.GetAttribLocation("aTexCoord"));
 			GL.VertexAttribPointer(shader.GetAttribLocation("aTexCoord"), 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
 
-			var texture = Texture.LoadFromFile("data/textures/unreal/DefaultDiffuse.png");
+			texture = Texture.LoadFromFile("data/textures/unreal/DefaultDiffuse.png");
 			texture.Use(TextureUnit.Texture0);
 		}
 
+		// @todo: Remove this method, it is here temporarly
 		public void RenderTest(Matrix4 mat1, Matrix4 mat2)
 		{
 			var location = Matrix4.CreateTranslation(Position);
@@ -93,8 +97,9 @@ namespace UDKLevelViewer.App.Entity
 			var scale = Matrix4.CreateScale(0.01f);
 
 			GL.BindVertexArray(VertexArrayId);
+			texture.Use(TextureUnit.Texture0);
 
-			shader.SetMatrix4("model", Matrix4.Identity * location * rotation * scale);
+			shader.SetMatrix4("model", Matrix4.Identity * rotation * location); //* scale);
 			shader.SetMatrix4("viewMatrix", mat1);
 			shader.SetMatrix4("projMatrix", mat2);
 
@@ -128,9 +133,7 @@ namespace UDKLevelViewer.App.Entity
 			var actor = new StaticMeshActor();
 			var lod = mesh.LODModels[0];
 
-			actor.Position = Position;
-			actor.Rotation = Quaternion.FromEulerAngles(Rotation);
-
+			// Parse the mesh vertex buffer
 			for (int i = 0; i < lod.NumVertices; i++)
 			{
 				var v = lod.PositionVertexBuffer.VertexData[i];
@@ -146,6 +149,7 @@ namespace UDKLevelViewer.App.Entity
 				}
 			}
 
+			// Parse the mesh index buffer
 			actor.IndexArrayCache = new uint[lod.IndexBuffer.Length];
 			// Todo: check if index buffer exists, some meshes don't have it.
 			if (lod.IndexBuffer.Length > 0)
@@ -159,6 +163,15 @@ namespace UDKLevelViewer.App.Entity
 			}
 
 			actor.BakeMesh();
+
+			actor.Position = Position;
+
+			// @todo: find a better way to do this
+			Rotation.X = MathHelper.DegreesToRadians(Rotation.X);
+			Rotation.Y = MathHelper.DegreesToRadians(Rotation.Y);
+			Rotation.Z = MathHelper.DegreesToRadians(Rotation.Z);
+
+			actor.Rotation = Quaternion.FromEulerAngles(Rotation);
 
 			return actor;
 		}

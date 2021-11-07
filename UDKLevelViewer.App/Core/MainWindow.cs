@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using UDKLevelViewer.App.Entity;
 using UDKLevelViewer.App.Render;
 using Shader = UDKLevelViewer.App.Render.Shader;
 
@@ -53,6 +54,9 @@ namespace UDKLevelViewer.App.Core
 		private Vector2 _lastPos;
 		double _time;
 
+		private StaticMeshActor sm1;
+		private StaticMeshActor sm2;
+
 		public MainWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
 			: base(gameWindowSettings, nativeWindowSettings)
 		{
@@ -61,6 +65,9 @@ namespace UDKLevelViewer.App.Core
         protected override void OnLoad()
         {
             base.OnLoad();
+
+			GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+			GL.Enable(EnableCap.DepthTest);
 
 			var sc = new SynchronizationContext();
 			SynchronizationContext.SetSynchronizationContext(sc);
@@ -72,11 +79,11 @@ namespace UDKLevelViewer.App.Core
 
 			// Require lab03
 			var model = ObjectBinary.From<StaticMesh>(package.GetUExport(4272)); // Doorway
-			//var model = ObjectBinary.From<StaticMesh>(package.GetUExport(4265)); // Airlock
+																				 //var model = ObjectBinary.From<StaticMesh>(package.GetUExport(4265)); // Airlock
 			var lod = model.LODModels[0];
-
 			var test = new List<float>();
 
+			#region OldCode
 			// Skel Mesh
 			/*
 			foreach (var vert in lod.VertexBufferGPUSkin.VertexData)
@@ -92,14 +99,15 @@ namespace UDKLevelViewer.App.Core
 			}
 			*/
 
+			
 			for (int i = 0; i < lod.NumVertices; i++)
 			{
 				var v = lod.PositionVertexBuffer.VertexData[i];
 				var uv = lod.VertexBuffer.VertexData[i].HalfPrecisionUVs;
 
-				test.Add(-v.X / 20);
-				test.Add(v.Z / 20);
-				test.Add(v.Y / 20);
+				test.Add(-v.X);
+				test.Add(v.Z);
+				test.Add(v.Y);
 				test.Add(uv[0].X);
 				test.Add(uv[0].Y);
 			}
@@ -117,9 +125,7 @@ namespace UDKLevelViewer.App.Core
 			}
 			indices = test2.ToArray();
 
-			GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-			GL.Enable(EnableCap.DepthTest);
-
+			/*
 			_vertexArrayObject = GL.GenVertexArray();
 			GL.BindVertexArray(_vertexArrayObject);
 
@@ -152,6 +158,16 @@ namespace UDKLevelViewer.App.Core
 			//_texture = Texture.LoadFromFile("data/textures/unreal/DefaultDiffuse.png");
 			_texture = Texture.LoadFromTexture2D(tex);
 			_texture.Use(TextureUnit.Texture0);
+			*/
+			#endregion OldCode
+
+			sm1 = StaticMeshActor.CreateFromStaticMesh(model, new Vector3(0, 0, 0), new Vector3(0, 0, 0));
+			//sm1.shader.SetMatrix4("model", Matrix4.CreateTranslation(new Vector3(0, 0, 0)));
+
+			//sm2 = StaticMeshActor.CreateFromStaticMesh(model, Vector3.Zero, Vector3.Zero);
+			//sm2.shader.SetMatrix4("model", Matrix4.CreateTranslation(new Vector3(200, 0, 0)));
+
+			//_shader.SetMatrix4("model", Matrix4.CreateTranslation(new Vector3(0, 0, 0)));
 
 			camera = new Camera(Vector3.UnitZ, Size.X / (float)Size.Y);
 
@@ -166,16 +182,22 @@ namespace UDKLevelViewer.App.Core
 
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-			GL.BindVertexArray(_vertexArrayObject);
+			//GL.BindVertexArray(_vertexArrayObject);
 
-			var model = Matrix4.Identity * Matrix4.CreateScale(0.1f);// * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(_time));
-			_shader.SetMatrix4("model", model);
+			//var model = Matrix4.Identity * Matrix4.CreateScale(0.1f);// * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(_time));
+			//_shader.SetMatrix4("model", model);
+			//camera.UpdateViewMatrix();
+			//camera.UpdateProjectionMatrix();
+			//_shader.SetMatrix4("viewMatrix", camera.ViewMatrix);
+			//_shader.SetMatrix4("projMatrix", camera.ProjMatrix);
+
 			camera.UpdateViewMatrix();
 			camera.UpdateProjectionMatrix();
-			_shader.SetMatrix4("viewMatrix", camera.ViewMatrix);
-			_shader.SetMatrix4("projMatrix", camera.ProjMatrix);
 
-			GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+			sm1.RenderTest(camera.ViewMatrix, camera.ProjMatrix);
+			//sm2.RenderTest(camera.ViewMatrix, camera.ProjMatrix);
+
+			//GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
 
 			SwapBuffers();
 		}
@@ -254,6 +276,37 @@ namespace UDKLevelViewer.App.Core
 				// Apply the camera pitch and yaw (we clamp the pitch in the camera class)
 				camera.Yaw += deltaX * sensitivity;
 				camera.Pitch -= deltaY * sensitivity; // Reversed since y-coordinates range from bottom to top
+			}
+
+			if (KeyboardState.IsKeyDown(Keys.LeftBracket))
+			{
+				sm1.Position.Y += 0.1f;
+
+				Console.WriteLine($"SM1 Pos: {sm1.Position}");
+			}
+
+			if (KeyboardState.IsKeyDown(Keys.RightBracket))
+			{
+				sm1.Position.Y -= 0.1f;
+				Console.WriteLine($"SM1 Pos: {sm1.Position}");
+			}
+
+			if (KeyboardState.IsKeyDown(Keys.Comma))
+			{
+				var rot = sm1.Rotation.ToEulerAngles();
+				rot.X += 0.01f;
+
+				sm1.Rotation = Quaternion.FromEulerAngles(rot);
+				Console.WriteLine($"SM1 Rot: {sm1.Rotation.ToEulerAngles()}");
+			}
+
+			if (KeyboardState.IsKeyDown(Keys.Period))
+			{
+				var rot = sm1.Rotation.ToEulerAngles();
+				rot.X -= 0.01f;
+
+				sm1.Rotation = Quaternion.FromEulerAngles(rot);
+				Console.WriteLine($"SM1 Rot: {sm1.Rotation.ToEulerAngles()}");
 			}
 		}
 		protected override void OnMouseWheel(MouseWheelEventArgs e)
